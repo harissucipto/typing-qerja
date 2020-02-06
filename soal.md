@@ -5,3 +5,7 @@ Implementasikan tombol Start, Stop, Pause, dan Resume.
 Ketika ukuran window dirubah, susunan huruf yang 'terbentur' batas window menjadi tidak 1 baris. Benarkan.
 Implementasikan sistem score.
 Implementasikan hukuman berupa pengurangan nilai bila salah ketik.
+
+2. Jawab
+
+Applikasi terasa Lag saat kata - kata turun diakrenakan waktu interval yang terjadi yaitu delay 100, kita harus membuat aplikasi berjalan 60fps dengan menggantikan delay interval yang terjadi dengan mengubahnya menjadi 16ms

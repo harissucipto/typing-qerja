@@ -14,9 +14,16 @@ var WordView = Backbone.View.extend({
     var string = this.model.get("string");
     var letter_width = 25;
     var word_width = string.length * letter_width;
-    if (this.model.get("x") + word_width > $(window).width()) {
-      this.model.set({ x: $(window).width() - word_width });
-    }
+    const ubahPosisiTidakTerbentur = () => {
+      if (this.model.get("x") + word_width > $(window).width()) {
+        this.model.set({ x: $(window).width() - word_width });
+      }
+    };
+
+    ubahPosisiTidakTerbentur();
+    // membuat ukuran text tidak terbentur
+    $(window).resize(ubahPosisiTidakTerbentur);
+
     for (var i = 0; i < string.length; i++) {
       $(this.el).append(
         $("<div>")
@@ -87,8 +94,41 @@ var TyperView = Backbone.View.extend({
         "margin-bottom": "10px",
         "z-index": "1000"
       })
-      .keyup(function() {
+      .keyup(function(evt) {
         var words = self.model.get("words");
+        // implement salah ketik salah skor
+        // if (evt.which !== 8) {
+        //   const setOfCharacterAtScreen = new Set(
+        //     words.map(item => item.get("string").toLowerCase()).join("")
+        //   );
+        //   const skor = self.model.get("skor");
+        //   const karakterDiketik = String.fromCharCode(evt.which);
+        //   console.log(
+        //     setOfCharacterxAtScreen.has(karakterDiketik.toLocaleLowerCase())
+        //   );
+        // }
+        const statusGame = self.model.get("statusGame");
+        if (["STOP", "PAUSE"].some(status => status === statusGame)) {
+          // stop event
+          return;
+        }
+
+        if (evt.which !== 8) {
+          const listKata = words.map(item => item.get("string").toLowerCase());
+          const tulisanDiketik = $(this)
+            .val()
+            .toLowerCase();
+          const isSalahKata = !listKata.some(kata =>
+            kata.includes(tulisanDiketik)
+          );
+          let skor = self.model.get("skor");
+          if (isSalahKata) {
+            skor -= 1;
+            self.model.set({ skor });
+          }
+          console.log(skor);
+        }
+
         for (var i = 0; i < words.length; i++) {
           var word = words.at(i);
           var typed_string = $(this).val();
@@ -97,6 +137,9 @@ var TyperView = Backbone.View.extend({
             word.set({ highlight: typed_string.length });
             if (typed_string.length == string.length) {
               $(this).val("");
+              // increase skor
+              let skor = self.model.get("skor");
+              self.model.set({ skor: skor + string.length });
             }
           } else {
             word.set({ highlight: 0 });
@@ -151,7 +194,10 @@ var Typer = Backbone.Model.extend({
     min_distance_between_words: 50,
     words: new Words(),
     min_speed: 1,
-    max_speed: 5
+    max_speed: 5,
+    iterateON: null,
+    skor: 0,
+    statusGame: "STOP"
   },
 
   initialize: function() {
@@ -162,11 +208,39 @@ var Typer = Backbone.Model.extend({
   },
 
   start: function() {
+    // animatiaon_delay berpengaru terhadap fps 60fps === 16ms
     var animation_delay = 100;
     var self = this;
-    setInterval(function() {
+    this.a = "d";
+    var i = setInterval(function() {
       self.iterate();
     }, animation_delay);
+    this.set({ iterateON: i, statusGame: "START", skor: 0 });
+  },
+
+  resume: function() {
+    // animatiaon_delay berpengaru terhadap fps 60fps === 16ms
+    var animation_delay = 100;
+    var self = this;
+    this.a = "d";
+    var i = setInterval(function() {
+      self.iterate();
+    }, animation_delay);
+    this.set({ iterateON: i, statusGame: "START" });
+  },
+
+  pause: function() {
+    var a = this.get("iterateON");
+    clearInterval(a);
+    // console.log("iy");
+    this.set({ statusGame: "PAUSE" });
+  },
+
+  stop: function() {
+    var a = this.get("iterateON");
+    clearInterval(a);
+    // console.log("iy");
+    this.set({ statusGame: "STOP", skor: 0 });
   },
 
   iterate: function() {
@@ -227,6 +301,7 @@ var Typer = Backbone.Model.extend({
         word.get("highlight") &&
         word.get("string").length == word.get("highlight")
       ) {
+        // this.pause();
         word.set({ move_next_iteration: true });
       }
     }
