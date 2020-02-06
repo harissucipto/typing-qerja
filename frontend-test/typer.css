@@ -26,6 +26,7 @@ body {
 button {
   color: blue;
   box-sizing: border-box;
+  border-radius: 5px;
 }
 
 button:disabled {
