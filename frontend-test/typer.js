@@ -97,17 +97,7 @@ var TyperView = Backbone.View.extend({
       })
       .keyup(function(evt) {
         var words = self.model.get("words");
-        // implement salah ketik salah skor
-        // if (evt.which !== 8) {
-        //   const setOfCharacterAtScreen = new Set(
-        //     words.map(item => item.get("string").toLowerCase()).join("")
-        //   );
-        //   const skor = self.model.get("skor");
-        //   const karakterDiketik = String.fromCharCode(evt.which);
-        //   console.log(
-        //     setOfCharacterxAtScreen.has(karakterDiketik.toLocaleLowerCase())
-        //   );
-        // }
+
         const statusGame = self.model.get("statusGame");
         if (["STOP", "PAUSE"].some(status => status === statusGame)) {
           // stop event
@@ -209,6 +199,15 @@ const handleDisableButton = (
   }
 };
 
+const disableInput = () => {
+  $(".form-control").attr("disabled", true);
+};
+
+const enableInput = () => {
+  $(".form-control").attr("disabled", false);
+  $(".form-control").focus();
+};
+
 var SkorView = Backbone.View.extend({
   template: _.template(
     `<h3 class='skor'>Skor: 
@@ -262,8 +261,7 @@ var GameControlView = Backbone.View.extend({
 
     console.log("start");
     this.model.start();
-    $(".form-control").attr("disabled", false);
-    $(".form-control").focus();
+    enableInput();
     handleDisableButton(["stop", "pause"], $, "start");
   },
   handlePause: function() {
@@ -273,7 +271,7 @@ var GameControlView = Backbone.View.extend({
 
     console.log("pause");
     this.model.pause();
-    $(".form-control").attr("disabled", true);
+    disableInput();
     handleDisableButton(["resume"], $, "pause");
   },
   handleResume: function() {
@@ -283,8 +281,7 @@ var GameControlView = Backbone.View.extend({
 
     console.log("resume");
     this.model.resume();
-    $(".form-control").attr("disabled", false);
-    $(".form-control").focus();
+    enableInput();
     handleDisableButton(["pause", "stop"], $, "resume");
   },
   handleStop: function() {
@@ -293,7 +290,7 @@ var GameControlView = Backbone.View.extend({
 
     console.log("stop");
     this.model.stop();
-    $(".form-control").attr("disabled", true);
+    disableInput();
     handleDisableButton(["start"], $, "stop");
   }
 });
@@ -327,42 +324,35 @@ var Typer = Backbone.Model.extend({
 
   start: function() {
     console.log("mulai");
-
     // animatiaon_delay berpengaru terhadap fps 60fps === 16ms
     var animation_delay = 16;
     var self = this;
-    this.a = "d";
-    var i = setInterval(function() {
+    const iterateON = setInterval(function() {
       self.iterate();
     }, animation_delay);
-    this.set({ iterateON: i, statusGame: "START", skor: 0 });
+    this.set({ iterateON, statusGame: "START", skor: 0 });
   },
 
   resume: function() {
     // animatiaon_delay berpengaru terhadap fps 60fps === 16ms
     var animation_delay = 16;
     var self = this;
-    this.a = "d";
-    var i = setInterval(function() {
+    const iterateON = setInterval(function() {
       self.iterate();
     }, animation_delay);
-    this.set({ iterateON: i, statusGame: "RESUME" });
+    this.set({ iterateON, statusGame: "RESUME" });
   },
 
   pause: function() {
-    var a = this.get("iterateON");
-    clearInterval(a);
-    // console.log("iy");
+    const iterateON = this.get("iterateON");
+    clearInterval(iterateON);
     this.set({ statusGame: "PAUSE" });
   },
 
   stop: function() {
-    console.log("stop");
-    var a = this.get("iterateON");
-    clearInterval(a);
-    // console.log("iy");
-    this.destroy();
-    var words = this.get("words");
+    const iterateON = this.get("iterateON");
+    clearInterval(iterateON);
+    const words = this.get("words");
     words.models.forEach(model => {
       model.get("view").remove();
     });
@@ -427,7 +417,6 @@ var Typer = Backbone.Model.extend({
         word.get("highlight") &&
         word.get("string").length == word.get("highlight")
       ) {
-        // this.pause();
         word.set({ move_next_iteration: true });
       }
     }
