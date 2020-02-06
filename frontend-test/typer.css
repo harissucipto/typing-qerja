@@ -4,11 +4,23 @@ body {
 
 .skor {
   position: absolute;
+  left: 5px;
+}
+
+.negatif {
+  color: red;
+  font-weight: bolder;
+}
+
+.positif {
+  color: blue;
+  font-weight: bolder;
 }
 
 .game-control {
   position: absolute;
   top: 60px;
+  left: 5px;
 }
 
 button {

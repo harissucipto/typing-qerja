@@ -210,7 +210,15 @@ const handleDisableButton = (
 };
 
 var SkorView = Backbone.View.extend({
-  template: _.template("<h3 class='skor'>Skor <%= skor %></h3>"),
+  template: _.template(
+    `<h3 class='skor'>Skor: 
+      <% if (skor >= 0) { %>
+          <span class="positif"><%= skor %> </span>
+      <% } else {%>
+          <span class="negatif"><%= skor %> </span>
+      <% }%>
+    </h3>`
+  ),
   render: function() {
     // agar rerender tidak berlapis
     $(".skor").remove();
@@ -218,6 +226,7 @@ var SkorView = Backbone.View.extend({
     return this;
   },
   initialize: function() {
+    this.render();
     this.model.on("change", this.render, this);
   }
 });
@@ -236,8 +245,9 @@ var GameControlView = Backbone.View.extend({
     return this;
   },
   initialize: function() {
+    $(".form-control").attr("disabled", true);
     this.render();
-    handleDisableButton(["pause", "stop"], $, "start");
+    handleDisableButton(["start"], $, "stop");
   },
   events: {
     "click #start": "handleStart",
@@ -253,6 +263,7 @@ var GameControlView = Backbone.View.extend({
     console.log("start");
     this.model.start();
     $(".form-control").attr("disabled", false);
+    $(".form-control").focus();
     handleDisableButton(["stop", "pause"], $, "start");
   },
   handlePause: function() {
@@ -273,6 +284,7 @@ var GameControlView = Backbone.View.extend({
     console.log("resume");
     this.model.resume();
     $(".form-control").attr("disabled", false);
+    $(".form-control").focus();
     handleDisableButton(["pause", "stop"], $, "resume");
   },
   handleStop: function() {
