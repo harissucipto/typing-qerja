@@ -1,3 +1,25 @@
 body {
   background-color: #eee;
 }
+
+.skor {
+  position: absolute;
+}
+
+.game-control {
+  position: absolute;
+  top: 60px;
+}
+
+button {
+  color: blue;
+  box-sizing: border-box;
+}
+
+button:disabled {
+  color: red;
+}
+
+.active {
+  border: 2px solid green;
+}

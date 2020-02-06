@@ -14,6 +14,7 @@ var WordView = Backbone.View.extend({
     var string = this.model.get("string");
     var letter_width = 25;
     var word_width = string.length * letter_width;
+
     const ubahPosisiTidakTerbentur = () => {
       if (this.model.get("x") + word_width > $(window).width()) {
         this.model.set({ x: $(window).width() - word_width });
@@ -188,6 +189,103 @@ var TyperView = Backbone.View.extend({
   }
 });
 
+const handleDisableButton = (
+  listExcept = [],
+  handleSelector,
+  activeID = ""
+) => {
+  const listIDButton = ["start", "pause", "resume", "stop"];
+  const disabledButton = (id, status = true) =>
+    handleSelector(`#${id}`).attr("disabled", status);
+  listIDButton.forEach(id => {
+    disabledButton(id);
+    if (activeID.length) handleSelector(`#${id}`).removeClass("active");
+  });
+  listExcept.forEach(id => {
+    disabledButton(id, false);
+  });
+  if (activeID.length) {
+    handleSelector(`#${activeID}`).addClass("active");
+  }
+};
+
+var SkorView = Backbone.View.extend({
+  template: _.template("<h3 class='skor'>Skor <%= skor %></h3>"),
+  render: function() {
+    // agar rerender tidak berlapis
+    $(".skor").remove();
+    $(this.el).append(this.template(this.model.toJSON()));
+    return this;
+  },
+  initialize: function() {
+    this.model.on("change", this.render, this);
+  }
+});
+
+var GameControlView = Backbone.View.extend({
+  template: _.template(`
+    <div class="game-control">
+      <button id="start" class="btn-active">start</button>
+      <button id="pause">pause</button>
+      <button id="resume">resume</button>
+      <button id="stop">stop</button>
+    </div>
+  `),
+  render: function() {
+    $(this.el).append(this.template(this.model.toJSON()));
+    return this;
+  },
+  initialize: function() {
+    this.render();
+    handleDisableButton(["pause", "stop"], $, "start");
+  },
+  events: {
+    "click #start": "handleStart",
+    "click #pause": "handlePause",
+    "click #resume": "handleResume",
+    "click #stop": "handleStop"
+  },
+  handleStart: function() {
+    const statusGame = this.model.get("statusGame");
+    // hanya jalan jika status sama dengan stop
+    if (statusGame !== "STOP") return;
+
+    console.log("start");
+    this.model.start();
+    $(".form-control").attr("disabled", false);
+    handleDisableButton(["stop", "pause"], $, "start");
+  },
+  handlePause: function() {
+    const statusGame = this.model.get("statusGame");
+    // hanya jalan jika status sama dengan stop
+    if (!["START", "RESUME"].some(status => status === statusGame)) return;
+
+    console.log("pause");
+    this.model.pause();
+    $(".form-control").attr("disabled", true);
+    handleDisableButton(["resume"], $, "pause");
+  },
+  handleResume: function() {
+    const statusGame = this.model.get("statusGame");
+    // hanya jalan jika status sama dengan stop
+    if (statusGame !== "PAUSE") return;
+
+    console.log("resume");
+    this.model.resume();
+    $(".form-control").attr("disabled", false);
+    handleDisableButton(["pause", "stop"], $, "resume");
+  },
+  handleStop: function() {
+    const statusGame = this.model.get("statusGame");
+    if (!["START", "RESUME"].some(status => status === statusGame)) return;
+
+    console.log("stop");
+    this.model.stop();
+    $(".form-control").attr("disabled", true);
+    handleDisableButton(["start"], $, "stop");
+  }
+});
+
 var Typer = Backbone.Model.extend({
   defaults: {
     max_num_words: 10,
@@ -205,11 +303,21 @@ var Typer = Backbone.Model.extend({
       model: this,
       el: $(document.body)
     });
+    new SkorView({
+      model: this,
+      el: $(document.body)
+    });
+    new GameControlView({
+      model: this,
+      el: $(document.body)
+    });
   },
 
   start: function() {
+    console.log("mulai");
+
     // animatiaon_delay berpengaru terhadap fps 60fps === 16ms
-    var animation_delay = 100;
+    var animation_delay = 16;
     var self = this;
     this.a = "d";
     var i = setInterval(function() {
@@ -220,13 +328,13 @@ var Typer = Backbone.Model.extend({
 
   resume: function() {
     // animatiaon_delay berpengaru terhadap fps 60fps === 16ms
-    var animation_delay = 100;
+    var animation_delay = 16;
     var self = this;
     this.a = "d";
     var i = setInterval(function() {
       self.iterate();
     }, animation_delay);
-    this.set({ iterateON: i, statusGame: "START" });
+    this.set({ iterateON: i, statusGame: "RESUME" });
   },
 
   pause: function() {
@@ -237,9 +345,15 @@ var Typer = Backbone.Model.extend({
   },
 
   stop: function() {
+    console.log("stop");
     var a = this.get("iterateON");
     clearInterval(a);
     // console.log("iy");
+    this.destroy();
+    var words = this.get("words");
+    words.models.forEach(model => {
+      model.get("view").remove();
+    });
     this.set({ statusGame: "STOP", skor: 0 });
   },
 
