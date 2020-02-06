@@ -20,9 +20,8 @@ var WordView = Backbone.View.extend({
         this.model.set({ x: $(window).width() - word_width });
       }
     };
-
     ubahPosisiTidakTerbentur();
-    // membuat ukuran text tidak terbentur
+    // membuat  text tidak terbentur jika windows di resize
     $(window).resize(ubahPosisiTidakTerbentur);
 
     for (var i = 0; i < string.length; i++) {
@@ -98,12 +97,13 @@ var TyperView = Backbone.View.extend({
       .keyup(function(evt) {
         var words = self.model.get("words");
 
+        // stop event jika  status game pause dan stop
         const statusGame = self.model.get("statusGame");
         if (["STOP", "PAUSE"].some(status => status === statusGame)) {
-          // stop event
           return;
         }
 
+        // skor berkurang -1 jika salah ketik
         if (evt.which !== 8) {
           const listKata = words.map(item => item.get("string").toLowerCase());
           const tulisanDiketik = $(this)
@@ -117,7 +117,6 @@ var TyperView = Backbone.View.extend({
             skor -= 1;
             self.model.set({ skor });
           }
-          console.log(skor);
         }
 
         for (var i = 0; i < words.length; i++) {
@@ -128,7 +127,7 @@ var TyperView = Backbone.View.extend({
             word.set({ highlight: typed_string.length });
             if (typed_string.length == string.length) {
               $(this).val("");
-              // increase skor
+              // skor bertambah sebanyak jumlah karakter pada kata jika benar semua kata
               let skor = self.model.get("skor");
               self.model.set({ skor: skor + string.length });
             }
@@ -179,6 +178,7 @@ var TyperView = Backbone.View.extend({
   }
 });
 
+// helper
 const handleDisableButton = (
   listExcept = [],
   handleSelector,
@@ -208,6 +208,12 @@ const enableInput = () => {
   $(".form-control").focus();
 };
 
+const checkStatusJalan = (ref, arrayCheck) => {
+  const statusGame = ref.model.get("statusGame");
+  if (!arrayCheck.some(status => status === statusGame)) return false;
+  return true;
+};
+
 var SkorView = Backbone.View.extend({
   template: _.template(
     `<h3 class='skor'>Skor: 
@@ -233,7 +239,7 @@ var SkorView = Backbone.View.extend({
 var GameControlView = Backbone.View.extend({
   template: _.template(`
     <div class="game-control">
-      <button id="start" class="btn-active">start</button>
+      <button id="start">start</button>
       <button id="pause">pause</button>
       <button id="resume">resume</button>
       <button id="stop">stop</button>
@@ -255,40 +261,29 @@ var GameControlView = Backbone.View.extend({
     "click #stop": "handleStop"
   },
   handleStart: function() {
-    const statusGame = this.model.get("statusGame");
-    // hanya jalan jika status sama dengan stop
-    if (statusGame !== "STOP") return;
-
-    console.log("start");
-    this.model.start();
-    enableInput();
-    handleDisableButton(["stop", "pause"], $, "start");
+    if (checkStatusJalan(this, ["STOP"])) {
+      this.model.start();
+      enableInput();
+      handleDisableButton(["stop", "pause"], $, "start");
+    }
   },
   handlePause: function() {
-    const statusGame = this.model.get("statusGame");
-    // hanya jalan jika status sama dengan stop
-    if (!["START", "RESUME"].some(status => status === statusGame)) return;
+    if (!checkStatusJalan(this, ["START", "RESUME"])) return;
 
-    console.log("pause");
     this.model.pause();
     disableInput();
     handleDisableButton(["resume"], $, "pause");
   },
   handleResume: function() {
-    const statusGame = this.model.get("statusGame");
-    // hanya jalan jika status sama dengan stop
-    if (statusGame !== "PAUSE") return;
-
-    console.log("resume");
-    this.model.resume();
-    enableInput();
-    handleDisableButton(["pause", "stop"], $, "resume");
+    if (checkStatusJalan(this, ["PAUSE"])) {
+      this.model.resume();
+      enableInput();
+      handleDisableButton(["pause", "stop"], $, "resume");
+    }
   },
   handleStop: function() {
-    const statusGame = this.model.get("statusGame");
-    if (!["START", "RESUME"].some(status => status === statusGame)) return;
+    if (!checkStatusJalan(this, ["START", "RESUME"])) return;
 
-    console.log("stop");
     this.model.stop();
     disableInput();
     handleDisableButton(["start"], $, "stop");
@@ -323,9 +318,8 @@ var Typer = Backbone.Model.extend({
   },
 
   start: function() {
-    console.log("mulai");
     // animatiaon_delay berpengaru terhadap fps 60fps === 16ms
-    var animation_delay = 16;
+    var animation_delay = 18;
     var self = this;
     const iterateON = setInterval(function() {
       self.iterate();
@@ -335,7 +329,7 @@ var Typer = Backbone.Model.extend({
 
   resume: function() {
     // animatiaon_delay berpengaru terhadap fps 60fps === 16ms
-    var animation_delay = 16;
+    var animation_delay = 18;
     var self = this;
     const iterateON = setInterval(function() {
       self.iterate();
